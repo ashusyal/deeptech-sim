@@ -23,7 +23,7 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
 
 with st.sidebar.expander("📋 Base Assumptions"):
-    scenario = st.selectbox("Select Scenario", ["Base Case", "Optimistic", "Pessimistic"])
+        scenario = st.selectbox("Select Scenario", ["Base Case", "Optimistic", "Pessimistic"])
     start_date = st.date_input("Forecast Start Date", datetime.today())
     years = 5
     initial_capital = st.number_input("Initial Capital ($)", 0, 10_000_000, 500_000, step=50000)
