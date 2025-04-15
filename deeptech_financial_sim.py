@@ -19,10 +19,12 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
-    monthly_rnd = st.number_input("Monthly R&D Prototype Costs ($)", 0, 1_000_000, 25000)    fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
+    monthly_rnd = st.number_input("Monthly R&D Prototype Costs ($)", 0, 1_000_000, 25000)
+    fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
     salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
     st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
-    monthly_ops = st.number_input("Monthly Non-R&D Operating Costs ($)", 0, 1_000_000, 15000)    capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
+    monthly_ops = st.number_input("Monthly Non-R&D Operating Costs ($)", 0, 1_000_000, 15000)
+    capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
 
 with st.sidebar.expander("📋 Base Assumptions"):
     scenario = st.selectbox("Select Scenario", ["Base Case", "Optimistic", "Pessimistic"])
