@@ -22,23 +22,23 @@ with st.sidebar.expander("💸 Fundraising Rounds"):
         date = st.date_input(f"Date for {label}", value=datetime.today(), key=f"round_date_{i}")
         rounds.append((label, amount, date))
 
-if rounds:
+
+    round_df = pd.DataFrame(rounds, columns=["Round", "Amount ($)", "Date"])
     st.subheader("🚦 Runway Status")
     if data['Runway Warning'].any():
         breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
         st.warning(f"🟡 Your projected cash dips below {months_of_runway} months of runway in {breach_month}.")
     else:
         st.success("🟢 Cash runway remains above threshold for the entire forecast period.")
-    st.subheader("📈 Fundraising Summary")
-    round_df = pd.DataFrame(rounds, columns=["Round", "Amount ($)", "Date"])
     st.dataframe(round_df)
 
 with st.sidebar.expander("💵 Revenue Model Assumptions", expanded=True):
     rev_type = st.radio("What are you selling?", ["Product", "Service (SaaS)", "Both"])
     price_per_unit = st.number_input("Product Price per Unit ($)", 1, 100_000, 1000)
     saas_monthly_price = 0
-    if rev_type in ["Service (SaaS)", "Both"]:
-        saas_monthly_price = st.number_input("Monthly SaaS Price per Customer ($)", 1, 100_000, 100)
+File "/mount/src/deeptech-sim/deeptech_financial_sim.py", line 27, in <module>
+    if data['Runway Warning'].any():
+       ^^^^        saas_monthly_price = st.number_input("Monthly SaaS Price per Customer ($)", 1, 100_000, 100)
 
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
