@@ -79,10 +79,7 @@ diffs = np.insert(diffs, 0, initial_customers)
 diffs = np.repeat(diffs, 12)[:60]
 data['New Customers'] = diffs
 
-# Revenue logic placeholders (replace with real pricing vars if needed)
-price_per_unit = 1000
-saas_monthly_price = 100
-rev_type = "Both"
+# Revenue logic
 product_revenue = data['New Customers'] * price_per_unit if rev_type in ["Product", "Both"] else 0
 
 saas_customers = np.zeros(60)
@@ -98,9 +95,10 @@ else:
 
 saas_revenue = saas_customers * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
 
-data['New Revenue'] = product_revenue
+data['New Revenue'] = product_revenue if rev_type in ["Product", "Both"] else 0
 data['Retained Customers'] = saas_customers.astype(int)
 data['Recurring Revenue'] = saas_revenue
+
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
 months_arr = np.arange(60)
@@ -132,9 +130,9 @@ implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
 implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
 st.caption(f"R&D = {implied_rd_pct:.1f}% of burn")
 st.caption(f"Non-R&D Ops = {implied_ops_pct:.1f}% of burn")
-if implied_rd_pct > 45:
-    st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–45%, with upper bound ~60%.")
-if implied_ops_pct > 40:
+if implied_rd_pct > 40:
+    st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–35%, with upper bound ~40%.")
+if implied_ops_pct > 25:
     st.warning(f"⚠️ Non-R&D Ops costs are {implied_ops_pct:.0f}% of burn. Consider optimizing administrative costs.")
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
