@@ -17,7 +17,10 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     rd_share = st.number_input("Target R&D % of Burn", 5, 60, 35, help="R&D typically accounts for 35–50% of spend in deep tech. This controls max scaling.")
     if rd_share > 50:
         st.warning("⚠️ R&D share is above typical deep tech norms. Consider reducing to 35–50% unless justified.")
-    ops_share = st.number_input("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
+    fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
+    salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
+    st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
+    ops_share = st.number_input("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.") often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
     if ops_share > 45:
         st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
     capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
@@ -111,13 +114,33 @@ rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 monthly_rnd = 25000  # placeholder if monthly_rnd_scaled needed
 monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
 
-burn_cap = (rnd_ops_cost + 15000 * mod) * (rd_share / 100)
+total_burn_target = rd_share + ops_share
+if total_burn_target > 100:
+    st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust to stay within total company burn.")
+
+# R&D is engineering FTE + monthly R&D
 rnd_total = (monthly_rnd_scaled + rnd_fte_cost) * mod
-rnd_capped = np.minimum(rnd_total, burn_cap)
-data['R&D'] = rnd_capped
+data['R&D'] = rnd_total
+
+# Ops is non-engineering FTE only
+ops_total = rnd_ops_cost * mod
+data['Operating Costs'] = ops_total
+
+# Combined total burn
+burn_total = rnd_total + ops_total
+
+# Sanity check for implied breakdown
+implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
+implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
+if implied_rd_pct + implied_ops_pct > 100:
+    st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust headcounts or salaries.")
+
+# Apply sanity warning if implied %s are too high
+implied_rd_pct = rnd_total.mean() / (rnd_total.mean() + rnd_ops_cost.mean()) * 100
+implied_ops_pct = 100 - implied_rd_pct
+if implied_rd_pct + implied_ops_pct > 100:
+    st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust headcounts or salaries.")
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
-burn_cap_ops = (rnd_fte_cost + monthly_rnd_scaled) * (ops_share / 100)
-data['Operating Costs'] = np.minimum(rnd_ops_cost + 15000 * mod, burn_cap_ops)
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
 data['Depreciation'] = 100_000 / 5 / 12
 
