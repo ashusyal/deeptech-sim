@@ -18,6 +18,9 @@ with st.sidebar.expander("💵 Revenue Model Assumptions", expanded=True):
         saas_monthly_price = st.number_input("Monthly SaaS Price per Customer ($)", 1, 100_000, 100)
 
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
+    scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
+    scale_factors = {"Lean": 1.05, "Steady": 1.2, "Aggressive": 1.4}
+    scale_rate = scale_factors[scale_mode]
     eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
@@ -85,11 +88,14 @@ diffs = np.repeat(diffs, 12)[:60]
 data['New Customers'] = diffs
 
 product_revenue = data['New Customers'] * price_per_unit if rev_type in ["Product", "Both"] else 0
-saas_customers = data['New Customers'].copy()
+saas_customers = np.zeros(60)
+saas_customers[0] = data['New Customers'].iloc[0]
 if customer_churn > 0:
     churn_rate = customer_churn / 100 / 12
-    for i in range(1, len(saas_customers)):
-        saas_customers[i] = saas_customers[i-1] * (1 - churn_rate) + data['New Customers'].iloc[i]
+    for i in range(1, 60):
+        retained = saas_customers[i - 1] * (1 - churn_rate)
+        new = data['New Customers'].iloc[i]
+        saas_customers[i] = retained + new
 else:
     saas_customers = data['Customers']
 
@@ -99,8 +105,14 @@ data['New Revenue'] = product_revenue
 data['Recurring Revenue'] = saas_revenue
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
-rnd_fte_cost = eng_fte * eng_salary / 12
-rnd_ops_cost = fte * salary_per_fte / 12
+months_arr = np.arange(60)
+years_arr = months_arr // 12
+
+eng_fte_scaled = eng_fte * (scale_rate ** years_arr)
+ops_fte_scaled = fte * (scale_rate ** years_arr)
+
+rnd_fte_cost = eng_fte_scaled * eng_salary / 12
+rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 
 data['R&D'] = np.where(np.arange(60) < rnd_years * 12, (monthly_rnd + rnd_fte_cost) * mod, 0)
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
