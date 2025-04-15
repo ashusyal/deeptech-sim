@@ -130,6 +130,9 @@ implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
 implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
 st.caption(f"R&D = {implied_rd_pct:.1f}% of burn")
 st.caption(f"Non-R&D Ops = {implied_ops_pct:.1f}% of burn")
+
+burn_multiple = burn_total.sum() / data['Revenue'].sum() if data['Revenue'].sum() > 0 else float('inf')
+st.caption(f"Burn Multiple = {burn_multiple:.2f} (Total Burn / Total Revenue)")
 if implied_rd_pct > 40:
     st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–35%, with upper bound ~40%.")
 if implied_ops_pct > 25:
