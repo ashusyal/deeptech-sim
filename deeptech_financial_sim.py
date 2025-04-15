@@ -18,7 +18,7 @@ with st.sidebar.expander("💸 Fundraising Rounds"):
     series_c = st.number_input("Series C Round ($)", 0, 10_000_000, 0, step=50000)
 
 funding_total = pre_seed + seed + series_a + series_b + series_c
-initial_capital += funding_total
+# Move this line below initial_capital input to avoid referencing before assignment
 
 with st.sidebar.expander("💵 Revenue Model Assumptions", expanded=True):
     rev_type = st.radio("What are you selling?", ["Product", "Service (SaaS)", "Both"])
@@ -46,6 +46,7 @@ with st.sidebar.expander("📋 Base Assumptions"):
     start_date = st.date_input("Forecast Start Date", datetime.today())
     years = 5
     initial_capital = st.number_input("Initial Capital ($)", 0, 10_000_000, 500_000, step=50000)
+initial_capital += pre_seed + seed + series_a + series_b + series_c
     months_of_runway = st.number_input("Runway Alert Threshold (Months)", 1, 24, 6, help="You’ll receive a warning when projected cash is less than this many months of burn.")
 
     st.markdown("---")
