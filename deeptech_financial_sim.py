@@ -71,7 +71,10 @@ expanded_customers = np.repeat(customer_counts, 12)[:60]
 data['Customers'] = expanded_customers
 
 # --- Revenue Calculation ---
-data['New Customers'] = np.append([initial_customers], np.diff(customer_counts).clip(min=0).repeat(12)[:59])
+diffs = np.diff(customer_counts)
+diffs = np.insert(diffs, 0, initial_customers)
+diffs = np.repeat(diffs, 12)[:60]
+data['New Customers'] = diffs
 data['New Revenue'] = data['New Customers'] * price_per_unit / 12 if rev_type in ["Product", "Both"] else 0
 data['Recurring Revenue'] = data['Customers'] * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
