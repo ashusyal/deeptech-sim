@@ -132,9 +132,9 @@ implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
 implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
 st.caption(f"R&D = {implied_rd_pct:.1f}% of burn")
 st.caption(f"Non-R&D Ops = {implied_ops_pct:.1f}% of burn")
-if implied_rd_pct > 40:
-    st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–35%, with upper bound ~40%.")
-if implied_ops_pct > 25:
+if implied_rd_pct > 45:
+    st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–45%, with upper bound ~60%.")
+if implied_ops_pct > 40:
     st.warning(f"⚠️ Non-R&D Ops costs are {implied_ops_pct:.0f}% of burn. Consider optimizing administrative costs.")
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
