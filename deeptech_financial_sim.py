@@ -89,8 +89,6 @@ data['Runway Months'] = data['Cash Balance'] / monthly_burn.replace(0, np.nan)
 data['Runway Warning'] = data['Runway Months'] < months_of_runway
 
 # --- Display Section ---
-# --- Display Section ---
-st.subheader("⚠️ Runway Status")
 st.subheader("⚠️ Runway Status")
 if data['Runway Warning'].any():
     breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
@@ -99,9 +97,35 @@ else:
     st.success("✅ Cash runway remains above threshold for the entire forecast period.")
 
 st.subheader("📊 Key Financial Projections")
-fig, ax = plt.subplots()
-data[['Revenue', 'Net Income', 'Cash Balance']].plot(ax=ax)
+st.line_chart(data[['Revenue', 'Net Income', 'Cash Balance']])
 
-("USD")
-ax.set_title("Revenue, Net Income, and Cash Balance Over Time")
-st.pyplot(fig)
+st.subheader("🧮 Financial Table")
+styled_data = data.copy()
+styled_data['Customers'] = styled_data['Customers'].astype(int)
+styled_data_formatted = styled_data.style.format({
+    "Price": "${:,.0f}",
+    "Revenue": "${:,.0f}",
+    "R&D": "${:,.0f}",
+    "Capitalized R&D": "${:,.0f}",
+    "Operating Costs": "${:,.0f}",
+    "CapEx": "${:,.0f}",
+    "Depreciation": "${:,.0f}",
+    "EBITDA": "${:,.0f}",
+    "Net Income": "${:,.0f}",
+    "Cash Flow": "${:,.0f}",
+    "Cash Balance": "${:,.0f}"
+})
+st.dataframe(styled_data_formatted)
+
+st.subheader("📤 Export Your Data")
+@st.cache_data
+def convert_df(df):
+    return df.to_csv(index=True).encode('utf-8')
+
+csv = convert_df(data)
+st.download_button(
+    label="Download financial projection as CSV",
+    data=csv,
+    file_name='financial_projection.csv',
+    mime='text/csv'
+) 
