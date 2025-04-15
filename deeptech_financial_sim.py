@@ -111,4 +111,6 @@ data['Recurring Revenue'] = saas_revenue
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
 rnd_fte_cost = eng_fte * eng_salary / 12
+rnd_ops_cost = fte * salary_per_fte / 12
 data['R&D'] = np.where(np.arange(60) < rnd_years * 12, (monthly_rnd + rnd_fte_cost) * mod, 0)
+data['Operating Costs'] = (rnd_ops_cost + monthly_ops * mod)
