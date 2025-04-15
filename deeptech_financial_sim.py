@@ -20,7 +20,7 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
     salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
     st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
-    ops_share = st.number_input("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.") often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
+    ops_share = st.number_input("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
     if ops_share > 45:
         st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
     capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
@@ -135,11 +135,6 @@ implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
 if implied_rd_pct + implied_ops_pct > 100:
     st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust headcounts or salaries.")
 
-# Apply sanity warning if implied %s are too high
-implied_rd_pct = rnd_total.mean() / (rnd_total.mean() + rnd_ops_cost.mean()) * 100
-implied_ops_pct = 100 - implied_rd_pct
-if implied_rd_pct + implied_ops_pct > 100:
-    st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust headcounts or salaries.")
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
 data['Depreciation'] = 100_000 / 5 / 12
@@ -202,3 +197,4 @@ st.download_button(
     file_name='financial_projection.csv',
     mime='text/csv'
 )
+
