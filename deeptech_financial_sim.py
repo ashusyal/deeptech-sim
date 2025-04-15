@@ -75,6 +75,7 @@ diffs = np.insert(diffs, 0, initial_customers)
 diffs = np.repeat(diffs, 12)[:60]
 data['New Customers'] = diffs
 
+# Revenue logic placeholders (replace with real pricing vars if needed)
 price_per_unit = 1000
 saas_monthly_price = 100
 rev_type = "Both"
@@ -107,13 +108,16 @@ ops_fte_scaled = fte * (scale_rate ** years_arr)
 rnd_fte_cost = eng_fte_scaled * eng_salary / 12
 rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 
-monthly_rnd = 25000
+monthly_rnd = 25000  # placeholder if monthly_rnd_scaled needed
 monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
 
+burn_cap = (rnd_ops_cost + 15000 * mod) * (rd_share / 100)
 rnd_total = (monthly_rnd_scaled + rnd_fte_cost) * mod
-data['R&D'] = rnd_total
+rnd_capped = np.minimum(rnd_total, burn_cap)
+data['R&D'] = rnd_capped
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
-data['Operating Costs'] = rnd_ops_cost + 15000 * mod
+burn_cap_ops = (rnd_fte_cost + monthly_rnd_scaled) * (ops_share / 100)
+data['Operating Costs'] = np.minimum(rnd_ops_cost + 15000 * mod, burn_cap_ops)
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
 data['Depreciation'] = 100_000 / 5 / 12
 
