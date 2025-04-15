@@ -112,7 +112,6 @@ ops_fte_scaled = fte * (scale_rate ** years_arr)
 rnd_fte_cost = eng_fte_scaled * eng_salary / 12
 rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 
-monthly_rnd = 25000  # placeholder if monthly_rnd_scaled needed
 monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
 
 
@@ -121,7 +120,7 @@ rnd_total = (monthly_rnd_scaled + rnd_fte_cost) * mod
 data['R&D'] = rnd_total
 
 # Ops is non-engineering FTE only
-ops_total = rnd_ops_cost * mod
+ops_total = (rnd_ops_cost + monthly_ops) * mod
 data['Operating Costs'] = ops_total
 
 # Combined total burn
@@ -130,11 +129,12 @@ burn_total = rnd_total + ops_total
 # Sanity check for implied breakdown
 implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
 implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
+st.caption(f"R&D = {implied_rd_pct:.1f}% of burn")
+st.caption(f"Non-R&D Ops = {implied_ops_pct:.1f}% of burn")
 if implied_rd_pct > 40:
     st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–35%, with upper bound ~40%.")
 if implied_ops_pct > 25:
     st.warning(f"⚠️ Non-R&D Ops costs are {implied_ops_pct:.0f}% of burn. Consider optimizing administrative costs.")
-
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
 data['Depreciation'] = 100_000 / 5 / 12
