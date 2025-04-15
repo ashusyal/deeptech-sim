@@ -6,53 +6,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Deep Tech Financial Simulator", layout="wide")
 st.title("🚀 Deep Tech Startup Financial Simulator")
-expand_ui = st.toggle("🧩 Expand Inputs", value=True)
 
-if expand_ui:
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.subheader("💵 Revenue Model")
-        rev_type = st.radio("What are you selling?", ["Product", "Service (SaaS)", "Both"])
-        price_per_unit = st.number_input("Product Price per Unit ($)", 1, 100_000, 1000)
-        saas_monthly_price = 0
-        if rev_type in ["Service (SaaS)", "Both"]:
-            saas_monthly_price = st.number_input("Monthly SaaS Price per Customer ($)", 1, 100_000, 100)
-    with col2:
-        st.subheader("🔬 R&D & Ops")
-        scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
-        scale_factors = {"Lean": 1.05, "Steady": 1.2, "Aggressive": 1.4}
-        scale_rate = scale_factors[scale_mode]
-        eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
-        eng_salary = st.number_input("Avg Eng Salary ($)", 10000, 300000, 90000)
-        monthly_rnd = st.number_input("Monthly R&D Spend ($)", 0, 1_000_000, 25000, step=5000)
-        rnd_years = st.slider("R&D Duration (Yrs)", 1, 5, 2)
-        capitalize_rnd = st.checkbox("Capitalize R&D?", value=True)
-        fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
-        salary_per_fte = st.number_input("Avg Ops Salary ($)", 10000, 300000, 80000)
-        monthly_ops = st.number_input("Monthly Ops Cost ($)", 0, 1_000_000, 15000)
-        capex = st.number_input("CapEx ($)", 0, 5_000_000, 100_000)
-        depr_years = st.slider("Depreciation (Yrs)", 1, 10, 5)
-    with col3:
-        st.subheader("📋 Base Assumptions")
-        scenario = st.selectbox("Scenario", ["Base Case", "Optimistic", "Pessimistic"])
-        start_date = st.date_input("Start Date", datetime.today())
-        years = 5
-        initial_capital = st.number_input("Initial Capital ($)", 0, 10_000_000, 500_000, step=50000)
-        months_of_runway = st.number_input("Runway Threshold (Months)", 1, 24, 6)
-        price_growth = st.slider("Annual Price Growth (%)", 0, 50, 5)
-        initial_customers = st.number_input("Initial Customers (Yr 1)", 0, 10_000, 100)
-        customer_growth = st.slider("Annual Customer Growth (%)", 0, 200, 50)
-        customer_churn = st.slider("Annual Churn (%)", 0, 100, 10)
-        st.subheader("💸 Fundraising")
-        num_rounds = st.number_input("# of Rounds", 0, 10, 3)
-        rounds = []
-        for i in range(num_rounds):
-            label = st.text_input(f"Round {i+1} Type", value=f"Round {i+1}", key=f"round_label_{i}")
-            amount = st.number_input(f"{label} Amount ($)", 0, 10_000_000, 0, step=50000, key=f"round_amt_{i}")
-            date = st.date_input(f"{label} Date", value=datetime.today(), key=f"round_date_{i}")
-            rounds.append((label, amount, date))
-else:
-    st.sidebar.markdown("_Inputs collapsed. Expand to edit._")
 
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
     scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
@@ -61,13 +15,12 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
-    monthly_rnd = st.number_input("Monthly R&D Spend ($)", 0, 1_000_000, 25000, step=5000)
-    rnd_years = st.slider("R&D Phase Duration (Years)", 1, 5, 2, help="This represents the development time for your current product or tech stack. Expenses entered above will apply for this duration.")
-    capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
+    rd_share = st.slider("Target R&D % of Burn", 5, 60, 35, help="R&D typically accounts for 35–50% of spend in deep tech. This controls max scaling.")
+        capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
     fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
     salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
     st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
-    monthly_ops = st.number_input("Monthly Non-R&D Operating Costs ($)", 0, 1_000_000, 15000)
+    ops_share = st.slider("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
     capex = st.number_input("Total Equipment Spend ($)", 0, 5_000_000, 100_000)
     depr_years = st.slider("Equipment Depreciation (Years)", 1, 10, 5)
 
@@ -152,9 +105,15 @@ ops_fte_scaled = fte * (scale_rate ** years_arr)
 rnd_fte_cost = eng_fte_scaled * eng_salary / 12
 rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 
-data['R&D'] = np.where(np.arange(60) < rnd_years * 12, (monthly_rnd + rnd_fte_cost) * mod, 0)
+monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
+
+# Apply cap: R&D should not exceed user-defined % of total burn
+burn_cap = (rnd_ops_cost + monthly_ops * mod) * (rd_share / 100)
+rnd_capped = np.minimum(rnd_total, burn_cap)
+data['R&D'] = rnd_capped
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
-data['Operating Costs'] = (rnd_ops_cost + monthly_ops * mod)
+burn_cap_ops = (rnd_fte_cost + monthly_rnd_scaled) * (ops_share / 100)
+data['Operating Costs'] = np.minimum(rnd_ops_cost + monthly_ops * mod, burn_cap_ops)
 data['CapEx'] = np.where(np.arange(60) == 0, capex, 0)
 data['Depreciation'] = capex / depr_years / 12
 
