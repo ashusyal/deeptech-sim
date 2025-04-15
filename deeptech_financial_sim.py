@@ -91,6 +91,7 @@ data['Runway Warning'] = data['Runway Months'] < months_of_runway
 # --- Display Section ---
 # --- Display Section ---
 st.subheader("⚠️ Runway Status")
+st.subheader("⚠️ Runway Status")
 if data['Runway Warning'].any():
     breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
     st.error(f"⚠️ Your projected cash dips below {months_of_runway} months of runway in {breach_month}.")
@@ -101,12 +102,6 @@ st.subheader("📊 Key Financial Projections")
 fig, ax = plt.subplots()
 data[['Revenue', 'Net Income', 'Cash Balance']].plot(ax=ax)
 
-# Add vertical dotted lines and bold year labels
-for yr in range(1, years + 1):
-    x = pd.to_datetime(start_date) + pd.DateOffset(years=yr)
-    ax.axvline(x, color='gray', linestyle='--', linewidth=0.8)
-    ax.text(x, ax.get_ylim()[1], f"Year {yr}", rotation=90, verticalalignment='bottom', horizontalalignment='center', fontsize=9, fontweight='bold')
-
-ax.set_ylabel("USD")
+("USD")
 ax.set_title("Revenue, Net Income, and Cash Balance Over Time")
 st.pyplot(fig)
