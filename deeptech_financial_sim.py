@@ -11,11 +11,16 @@ st.title("🚀 Deep Tech Startup Financial Simulator")
 st.sidebar.header("Input Your Assumptions")
 
 with st.sidebar.expander("💸 Fundraising Rounds"):
-    pre_seed = st.number_input("Pre-Seed Round ($)", 0, 10_000_000, 0, step=50000)
-    seed = st.number_input("Seed Round ($)", 0, 10_000_000, 0, step=50000)
-    series_a = st.number_input("Series A Round ($)", 0, 10_000_000, 0, step=50000)
-    series_b = st.number_input("Series B Round ($)", 0, 10_000_000, 0, step=50000)
-    series_c = st.number_input("Series C Round ($)", 0, 10_000_000, 0, step=50000)
+    num_rounds = st.number_input("How many rounds?", 0, 10, 3)
+    rounds = []
+    for i in range(num_rounds):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            label = st.text_input(f"Round {i+1} Type", value=f"Round {i+1}", key=f"round_label_{i}")
+        with col2:
+            amount = st.number_input(f"Amount for {label} ($)", 0, 10_000_000, 0, step=50000, key=f"round_amt_{i}")
+        date = st.date_input(f"Date for {label}", value=start_date, key=f"round_date_{i}")
+        rounds.append((label, amount, date))", 0, 10_000_000, 0, step=50000)
 
 funding_total = pre_seed + seed + series_a + series_b + series_c
 # Move this line below initial_capital input to avoid referencing before assignment
@@ -36,6 +41,7 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
 
     fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
     salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
+st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
     monthly_ops = st.number_input("Monthly Non-R&D Operating Costs ($)", 0, 1_000_000, 15000)
 
     capex = st.number_input("Total Equipment Spend ($)", 0, 5_000_000, 100_000)
@@ -46,7 +52,9 @@ with st.sidebar.expander("📋 Base Assumptions"):
     start_date = st.date_input("Forecast Start Date", datetime.today())
     years = 5
     initial_capital = st.number_input("Initial Capital ($)", 0, 10_000_000, 500_000, step=50000)
-    initial_capital += pre_seed + seed + series_a + series_b + series_c
+    for label, amount, date in rounds:
+        if date <= start_date:
+            initial_capital += amount
     months_of_runway = st.number_input("Runway Alert Threshold (Months)", 1, 24, 6, help="You’ll receive a warning when projected cash is less than this many months of burn.")
 
     st.markdown("---")
@@ -87,12 +95,23 @@ diffs = np.insert(diffs, 0, initial_customers)
 diffs = np.repeat(diffs, 12)[:60]
 data['New Customers'] = diffs
 
-# Use annual figures for both product and SaaS revenue
-product_revenue = data['New Customers'] * price_per_unit / 12 if rev_type in ["Product", "Both"] else 0
-saas_revenue = data['Customers'] * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
+# One-time product revenue in month of acquisition
+product_revenue = data['New Customers'] * price_per_unit if rev_type in ["Product", "Both"] else 0
+
+# Monthly SaaS revenue, churned over time
+saas_customers = data['New Customers'].copy()
+if customer_churn > 0:
+    churn_rate = customer_churn / 100 / 12
+    for i in range(1, len(saas_customers)):
+        saas_customers[i] = saas_customers[i-1] * (1 - churn_rate) + data['New Customers'].iloc[i]
+else:
+    saas_customers = data['Customers']
+
+saas_revenue = saas_customers * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
 
 data['New Revenue'] = product_revenue
 data['Recurring Revenue'] = saas_revenue
+
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
 # --- Cost Logic ---
