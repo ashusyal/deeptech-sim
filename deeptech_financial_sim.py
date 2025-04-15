@@ -102,6 +102,7 @@ else:
 saas_revenue = saas_customers * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
 
 data['New Revenue'] = product_revenue
+data['Retained Customers'] = saas_customers.astype(int)
 data['Recurring Revenue'] = saas_revenue
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
@@ -132,7 +133,7 @@ data['Runway Warning'] = data['Runway Months'] < months_of_runway
 # Chart
 st.subheader("📊 Key Financial Projections")
 plot_df = data.reset_index()
-melted = plot_df.melt(id_vars=['Date'], value_vars=['Revenue', 'Net Income', 'Cash Balance'], var_name='Metric', value_name='Value')
+melted = plot_df.melt(id_vars=['Date'], value_vars=['Revenue', 'Net Income', 'Cash Balance', 'Retained Customers'], var_name='Metric', value_name='Value')
 line_chart = alt.Chart(melted).mark_line(interpolate='monotone', tooltip=True).encode(
     x=alt.X('Date:T', title='Date'),
     y=alt.Y('Value:Q', title='USD'),
@@ -153,6 +154,7 @@ st.subheader("🧮 Financial Table")
 styled_data = data.copy()
 styled_data['Customers'] = styled_data['Customers'].astype(int)
 styled_data_formatted = styled_data.style.format({
+    "Retained Customers": "{:,}",
     "Revenue": "${:,.0f}",
     "New Revenue": "${:,.0f}",
     "Recurring Revenue": "${:,.0f}",
