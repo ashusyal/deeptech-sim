@@ -24,12 +24,7 @@ with st.sidebar.expander("💸 Fundraising Rounds"):
 
 
     round_df = pd.DataFrame(rounds, columns=["Round", "Amount ($)", "Date"])
-    st.subheader("🚦 Runway Status")
-    if data['Runway Warning'].any():
-        breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
-        st.warning(f"🟡 Your projected cash dips below {months_of_runway} months of runway in {breach_month}.")
-    else:
-        st.success("🟢 Cash runway remains above threshold for the entire forecast period.")
+    round_df = pd.DataFrame(rounds, columns=["Round", "Amount ($)", "Date"])
     st.dataframe(round_df)
 
 with st.sidebar.expander("💵 Revenue Model Assumptions", expanded=True):
@@ -155,6 +150,13 @@ styled_data_formatted = styled_data.style.format({
     "Cash Balance": "${:,.0f}"
 })
 st.dataframe(styled_data_formatted)
+
+st.subheader("🚦 Runway Status")
+if data['Runway Warning'].any():
+    breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
+    st.warning(f"🟡 Your projected cash dips below {months_of_runway} months of runway in {breach_month}.")
+else:
+    st.success("🟢 Cash runway remains above threshold for the entire forecast period.")
 
 st.subheader("📤 Export Your Data")
 @st.cache_data
