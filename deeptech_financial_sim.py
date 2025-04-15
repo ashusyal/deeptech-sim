@@ -46,7 +46,7 @@ with st.sidebar.expander("📋 Base Assumptions"):
     start_date = st.date_input("Forecast Start Date", datetime.today())
     years = 5
     initial_capital = st.number_input("Initial Capital ($)", 0, 10_000_000, 500_000, step=50000)
-initial_capital += pre_seed + seed + series_a + series_b + series_c
+    initial_capital += pre_seed + seed + series_a + series_b + series_c
     months_of_runway = st.number_input("Runway Alert Threshold (Months)", 1, 24, 6, help="You’ll receive a warning when projected cash is less than this many months of burn.")
 
     st.markdown("---")
