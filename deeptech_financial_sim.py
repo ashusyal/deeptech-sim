@@ -169,6 +169,9 @@ else:
 st.subheader("🧮 Financial Table")
 styled_data = data.copy()
 styled_data['Customers'] = styled_data['Customers'].astype(int)
+styled_data['Engineering Headcount'] = eng_fte_scaled.astype(int)
+styled_data['Ops Headcount'] = ops_fte_scaled.astype(int)
+
 styled_data_formatted = styled_data.style.format({
     "Retained Customers": "{:,}",
     "Revenue": "${:,.0f}",
