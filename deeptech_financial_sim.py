@@ -12,7 +12,7 @@ with st.sidebar.expander("💵 Revenue Model Assumptions"):
     price_per_unit = st.number_input("Product Price per Unit ($)", 0, 100_000, 1000)
     saas_monthly_price = st.number_input("Monthly SaaS Revenue per Customer ($)", 0, 100_000, 100)
 
-with st.sidebar.expander("🔬 R&D and Operating Costs"):
+with st.sidebar.expander("🧾 Year 1 Expenses"):
     scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
     scale_factors = {"Lean": 1.05, "Steady": 1.2, "Aggressive": 1.4}
     scale_rate = scale_factors[scale_mode]
@@ -112,7 +112,7 @@ ops_fte_scaled = fte * (scale_rate ** years_arr)
 rnd_fte_cost = eng_fte_scaled * eng_salary / 12
 rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 
-monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
+monthly_rnd_scaled = (monthly_rnd * scale_rate) * (scale_rate ** years_arr)
 
 
 # R&D is engineering FTE + monthly R&D
@@ -120,7 +120,8 @@ rnd_total = (monthly_rnd_scaled + rnd_fte_cost) * mod
 data['R&D'] = rnd_total
 
 # Ops is non-engineering FTE only
-ops_total = (rnd_ops_cost + monthly_ops) * mod
+monthly_ops_scaled = monthly_ops * (scale_rate ** years_arr)
+ops_total = (rnd_ops_cost + monthly_ops_scaled) * mod
 data['Operating Costs'] = ops_total
 
 # Combined total burn
