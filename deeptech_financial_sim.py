@@ -23,6 +23,12 @@ with st.sidebar.expander("💸 Fundraising Rounds"):
         rounds.append((label, amount, date))
 
 if rounds:
+    st.subheader("🚦 Runway Status")
+    if data['Runway Warning'].any():
+        breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
+        st.warning(f"🟡 Your projected cash dips below {months_of_runway} months of runway in {breach_month}.")
+    else:
+        st.success("🟢 Cash runway remains above threshold for the entire forecast period.")
     st.subheader("📈 Fundraising Summary")
     round_df = pd.DataFrame(rounds, columns=["Round", "Amount ($)", "Date"])
     st.dataframe(round_df)
@@ -35,6 +41,9 @@ with st.sidebar.expander("💵 Revenue Model Assumptions", expanded=True):
         saas_monthly_price = st.number_input("Monthly SaaS Price per Customer ($)", 1, 100_000, 100)
 
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
+    eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
+    eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
+    st.caption("These are engineering roles, contributing primarily to R&D costs.")
     monthly_rnd = st.number_input("Monthly R&D Spend ($)", 0, 1_000_000, 25000, step=5000)
     rnd_years = st.slider("R&D Phase Duration (Years)", 1, 5, 2, help="This represents the development time for your current product or tech stack. Expenses entered above will apply for this duration.")
     capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
@@ -101,7 +110,8 @@ data['New Revenue'] = product_revenue
 data['Recurring Revenue'] = saas_revenue
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
-data['R&D'] = np.where(np.arange(60) < rnd_years * 12, monthly_rnd * mod, 0)
+rnd_fte_cost = eng_fte * eng_salary / 12
+    data['R&D'] = np.where(np.arange(60) < rnd_years * 12, (monthly_rnd + rnd_fte_cost) * mod, 0)
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 
 data['Operating Costs'] = (fte * salary_per_fte / 12 + monthly_ops * mod)
@@ -117,12 +127,7 @@ monthly_burn = data['Operating Costs'] + data['R&D']
 data['Runway Months'] = (data['Cash Balance'] / monthly_burn.replace(0, np.nan)).fillna(0).astype(int)
 data['Runway Warning'] = data['Runway Months'] < months_of_runway
 
-st.subheader("🚦 Runway Status")
-if data['Runway Warning'].any():
-    breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
-    st.warning(f"🟡 Your projected cash dips below {months_of_runway} months of runway in {breach_month}.")
-else:
-    st.success("🟢 Cash runway remains above threshold for the entire forecast period.")
+
 
 st.subheader("📊 Key Financial Projections")
 plot_df = data.reset_index()
