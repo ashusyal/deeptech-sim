@@ -6,6 +6,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Deep Tech Financial Simulator", layout="wide")
 st.title("🚀 Deep Tech Startup Financial Simulator")
+expand_ui = st.toggle("🧩 Expand Inputs", value=True)
 
 if expand_ui:
     col1, col2, col3 = st.columns(3)
@@ -51,12 +52,7 @@ if expand_ui:
             date = st.date_input(f"{label} Date", value=datetime.today(), key=f"round_date_{i}")
             rounds.append((label, amount, date))
 else:
-    # default sidebar UI preserved here:
-    rev_type = st.radio("What are you selling?", ["Product", "Service (SaaS)", "Both"])
-    price_per_unit = st.number_input("Product Price per Unit ($)", 1, 100_000, 1000)
-    saas_monthly_price = 0
-    if rev_type in ["Service (SaaS)", "Both"]:
-        saas_monthly_price = st.number_input("Monthly SaaS Price per Customer ($)", 1, 100_000, 100)
+    st.sidebar.markdown("_Inputs collapsed. Expand to edit._")
 
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
     scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
