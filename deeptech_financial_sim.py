@@ -20,14 +20,12 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
     monthly_rnd = st.number_input("Monthly R&D Prototype Costs ($)", 0, 1_000_000, 25000)
-    if rd_share > 50:
-        st.warning("⚠️ R&D share is above typical deep tech norms. Consider reducing to 35–50% unless justified.")
+            st.warning("⚠️ R&D share is above typical deep tech norms. Consider reducing to 35–50% unless justified.")
     fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
     salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
     st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
     monthly_ops = st.number_input("Monthly Non-R&D Operating Costs ($)", 0, 1_000_000, 15000)
-    if ops_share > 45:
-        st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
+            st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
     capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
 
 with st.sidebar.expander("📋 Base Assumptions"):
@@ -132,6 +130,8 @@ data['Operating Costs'] = ops_total
 burn_total = rnd_total + ops_total
 
 # Sanity check for implied breakdown
+implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
+implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
 if implied_rd_pct > 40:
     st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–35%, with upper bound ~40%.")
 if implied_ops_pct > 25:
