@@ -7,6 +7,7 @@ from datetime import datetime
 st.set_page_config(page_title="Deep Tech Financial Simulator", layout="wide")
 st.title("🚀 Deep Tech Startup Financial Simulator")
 
+
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
     scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
     scale_factors = {"Lean": 1.05, "Steady": 1.2, "Aggressive": 1.4}
@@ -14,13 +15,14 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
-    rd_share = st.number_input("Target R&D % of Burn", 5, 60, 35, help="R&D typically accounts for 35–50% of spend in deep tech. This controls max scaling.")
-    if rd_share > 50:
-        st.warning("⚠️ R&D share is above typical deep tech norms. Consider reducing to 35–50% unless justified.")
-    ops_share = st.number_input("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
-    if ops_share > 45:
-        st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
-    capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
+    rd_share = st.slider("Target R&D % of Burn", 5, 60, 35, help="R&D typically accounts for 35–50% of spend in deep tech. This controls max scaling.")
+        capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
+    fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
+    salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
+    st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
+    ops_share = st.slider("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
+    capex = st.number_input("Total Equipment Spend ($)", 0, 5_000_000, 100_000)
+    depr_years = st.slider("Equipment Depreciation (Years)", 1, 10, 5)
 
 with st.sidebar.expander("📋 Base Assumptions"):
     scenario = st.selectbox("Select Scenario", ["Base Case", "Optimistic", "Pessimistic"])
@@ -75,12 +77,7 @@ diffs = np.insert(diffs, 0, initial_customers)
 diffs = np.repeat(diffs, 12)[:60]
 data['New Customers'] = diffs
 
-# Revenue logic placeholders (replace with real pricing vars if needed)
-price_per_unit = 1000
-saas_monthly_price = 100
-rev_type = "Both"
 product_revenue = data['New Customers'] * price_per_unit if rev_type in ["Product", "Both"] else 0
-
 saas_customers = np.zeros(60)
 saas_customers[0] = data['New Customers'].iloc[0]
 if customer_churn > 0:
@@ -108,18 +105,17 @@ ops_fte_scaled = fte * (scale_rate ** years_arr)
 rnd_fte_cost = eng_fte_scaled * eng_salary / 12
 rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 
-monthly_rnd = 25000  # placeholder if monthly_rnd_scaled needed
 monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
 
-burn_cap = (rnd_ops_cost + 15000 * mod) * (rd_share / 100)
-rnd_total = (monthly_rnd_scaled + rnd_fte_cost) * mod
+# Apply cap: R&D should not exceed user-defined % of total burn
+burn_cap = (rnd_ops_cost + monthly_ops * mod) * (rd_share / 100)
 rnd_capped = np.minimum(rnd_total, burn_cap)
 data['R&D'] = rnd_capped
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 burn_cap_ops = (rnd_fte_cost + monthly_rnd_scaled) * (ops_share / 100)
-data['Operating Costs'] = np.minimum(rnd_ops_cost + 15000 * mod, burn_cap_ops)
-data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
-data['Depreciation'] = 100_000 / 5 / 12
+data['Operating Costs'] = np.minimum(rnd_ops_cost + monthly_ops * mod, burn_cap_ops)
+data['CapEx'] = np.where(np.arange(60) == 0, capex, 0)
+data['Depreciation'] = capex / depr_years / 12
 
 data['EBITDA'] = data['Revenue'] - (data['R&D'] - data['Capitalized R&D']) - data['Operating Costs']
 data['Net Income'] = data['EBITDA'] - data['Depreciation']
@@ -130,6 +126,7 @@ monthly_burn = data['Operating Costs'] + data['R&D']
 data['Runway Months'] = (data['Cash Balance'] / monthly_burn.replace(0, np.nan)).fillna(0).astype(int)
 data['Runway Warning'] = data['Runway Months'] < months_of_runway
 
+# Chart
 st.subheader("📊 Key Financial Projections")
 plot_df = data.reset_index()
 melted = plot_df.melt(id_vars=['Date'], value_vars=['Revenue', 'Net Income', 'Cash Balance', 'Retained Customers'], var_name='Metric', value_name='Value')
@@ -140,6 +137,7 @@ line_chart = alt.Chart(melted).mark_line(interpolate='monotone', tooltip=True).e
 ).properties(width=800, height=400)
 st.altair_chart(line_chart, use_container_width=True)
 
+# Runway status
 st.subheader("🚦 Runway Status")
 if data['Runway Warning'].any():
     breach_month = data[data['Runway Warning']].index[0].strftime('%b %Y')
@@ -147,6 +145,7 @@ if data['Runway Warning'].any():
 else:
     st.success("🟢 Cash runway remains above threshold for the entire forecast period.")
 
+# Table
 st.subheader("🧮 Financial Table")
 styled_data = data.copy()
 styled_data['Customers'] = styled_data['Customers'].astype(int)
@@ -167,6 +166,7 @@ styled_data_formatted = styled_data.style.format({
 })
 st.dataframe(styled_data_formatted)
 
+# Export
 st.subheader("📤 Export Your Data")
 @st.cache_data
 def convert_df(df):
