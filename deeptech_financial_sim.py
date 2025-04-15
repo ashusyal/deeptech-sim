@@ -16,4 +16,10 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
     rd_share = st.slider("Target R&D % of Burn", 5, 60, 35, help="R&D typically accounts for 35–50% of spend in deep tech. This controls max scaling.")
-        capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
+    if rd_share > 50:
+        st.warning("⚠️ R&D share is above typical deep tech norms. Consider reducing to 35–50% unless justified.")
+    ops_share = st.slider("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
+    if ops_share > 45:
+        st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
+
+    capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
