@@ -10,6 +10,16 @@ st.title("🚀 Deep Tech Startup Financial Simulator")
 # --- Sidebar: Intake Form ---
 st.sidebar.header("Input Your Assumptions")
 
+with st.sidebar.expander("💸 Fundraising Rounds"):
+    pre_seed = st.number_input("Pre-Seed Round ($)", 0, 10_000_000, 0, step=50000)
+    seed = st.number_input("Seed Round ($)", 0, 10_000_000, 0, step=50000)
+    series_a = st.number_input("Series A Round ($)", 0, 10_000_000, 0, step=50000)
+    series_b = st.number_input("Series B Round ($)", 0, 10_000_000, 0, step=50000)
+    series_c = st.number_input("Series C Round ($)", 0, 10_000_000, 0, step=50000)
+
+funding_total = pre_seed + seed + series_a + series_b + series_c
+initial_capital += funding_total
+
 with st.sidebar.expander("💵 Revenue Model Assumptions", expanded=True):
     rev_type = st.radio("What are you selling?", ["Product", "Service (SaaS)", "Both"])
     st.text_input("Estimated Customer Lifetime Value (LTV) — in years", value="3", help="This is a descriptive estimate only. It helps you understand the impact of recurring vs one-time revenue models.")
@@ -75,8 +85,13 @@ diffs = np.diff(customer_counts)
 diffs = np.insert(diffs, 0, initial_customers)
 diffs = np.repeat(diffs, 12)[:60]
 data['New Customers'] = diffs
-data['New Revenue'] = data['New Customers'] * price_per_unit / 12 if rev_type in ["Product", "Both"] else 0
-data['Recurring Revenue'] = data['Customers'] * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
+
+# Use annual figures for both product and SaaS revenue
+product_revenue = data['New Customers'] * price_per_unit / 12 if rev_type in ["Product", "Both"] else 0
+saas_revenue = data['Customers'] * saas_monthly_price if rev_type in ["Service (SaaS)", "Both"] else 0
+
+data['New Revenue'] = product_revenue
+data['Recurring Revenue'] = saas_revenue
 data['Revenue'] = data['New Revenue'] + data['Recurring Revenue']
 
 # --- Cost Logic ---
@@ -107,10 +122,9 @@ else:
 
 st.subheader("📊 Key Financial Projections")
 plot_df = data.reset_index()
-plot_df['Quarter Label'] = plot_df['Date'].dt.to_period('Q').astype(str)
-melted = plot_df.melt(id_vars=['Quarter Label', 'Date'], value_vars=['Revenue', 'Net Income', 'Cash Balance'], var_name='Metric', value_name='Value')
-line_chart = alt.Chart(melted).mark_line().encode(
-    x=alt.X('Quarter Label:N', title='Quarter'),
+melted = plot_df.melt(id_vars=['Date'], value_vars=['Revenue', 'Net Income', 'Cash Balance'], var_name='Metric', value_name='Value')
+line_chart = alt.Chart(melted).mark_line(interpolate='monotone', tooltip=True).encode(
+    x=alt.X('Date:T', title='Date'),
     y=alt.Y('Value:Q', title='USD'),
     color='Metric:N'
 ).properties(
