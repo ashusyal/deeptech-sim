@@ -19,9 +19,9 @@ with st.sidebar.expander("💸 Fundraising Rounds"):
             label = st.text_input(f"Round {i+1} Type", value=f"Round {i+1}", key=f"round_label_{i}")
         with col2:
             amount = st.number_input(f"Amount for {label} ($)", 0, 10_000_000, 0, step=50000, key=f"round_amt_{i}")
-        date = st.date_input(f"Date for {label}", value=start_date, key=f"round_date_{i}")
-        rounds.append((label, amount, date))
-
+            date = st.date_input(f"Date for {label}", value=datetime.today(), key=f"round_date_{i}")
+    rounds.append((label, amount, date))((label, amount, date))
+    
 funding_total = pre_seed + seed + series_a + series_b + series_c
 # Move this line below initial_capital input to avoid referencing before assignment
 
