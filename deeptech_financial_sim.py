@@ -114,3 +114,57 @@ rnd_fte_cost = eng_fte * eng_salary / 12
 rnd_ops_cost = fte * salary_per_fte / 12
 data['R&D'] = np.where(np.arange(60) < rnd_years * 12, (monthly_rnd + rnd_fte_cost) * mod, 0)
 data['Operating Costs'] = (rnd_ops_cost + monthly_ops * mod)
+
+data['CapEx'] = np.where(np.arange(60) == 0, capex, 0)
+data['Depreciation'] = capex / depr_years / 12
+
+data['EBITDA'] = data['Revenue'] - (data['R&D'] - data['Capitalized R&D']) - data['Operating Costs']
+data['Net Income'] = data['EBITDA'] - data['Depreciation']
+data['Cash Flow'] = data['Net Income'] - data['CapEx']
+data['Cash Balance'] = initial_capital + data['Cash Flow'].cumsum()
+
+monthly_burn = data['Operating Costs'] + data['R&D']
+data['Runway Months'] = (data['Cash Balance'] / monthly_burn.replace(0, np.nan)).fillna(0).astype(int)
+data['Runway Warning'] = data['Runway Months'] < months_of_runway
+
+st.subheader("📊 Key Financial Projections")
+plot_df = data.reset_index()
+melted = plot_df.melt(id_vars=['Date'], value_vars=['Revenue', 'Net Income', 'Cash Balance'], var_name='Metric', value_name='Value')
+line_chart = alt.Chart(melted).mark_line(interpolate='monotone', tooltip=True).encode(
+    x=alt.X('Date:T', title='Date'),
+    y=alt.Y('Value:Q', title='USD'),
+    color='Metric:N'
+).properties(width=800, height=400)
+st.altair_chart(line_chart, use_container_width=True)
+
+st.subheader("🧮 Financial Table")
+styled_data = data.copy()
+styled_data['Customers'] = styled_data['Customers'].astype(int)
+styled_data_formatted = styled_data.style.format({
+    "Revenue": "${:,.0f}",
+    "New Revenue": "${:,.0f}",
+    "Recurring Revenue": "${:,.0f}",
+    "R&D": "${:,.0f}",
+    "Capitalized R&D": "${:,.0f}",
+    "Operating Costs": "${:,.0f}",
+    "CapEx": "${:,.0f}",
+    "Depreciation": "${:,.0f}",
+    "EBITDA": "${:,.0f}",
+    "Net Income": "${:,.0f}",
+    "Cash Flow": "${:,.0f}",
+    "Cash Balance": "${:,.0f}"
+})
+st.dataframe(styled_data_formatted)
+
+st.subheader("📤 Export Your Data")
+@st.cache_data
+def convert_df(df):
+    return df.to_csv(index=True).encode('utf-8')
+
+csv = convert_df(data)
+st.download_button(
+    label="Download financial projection as CSV",
+    data=csv,
+    file_name='financial_projection.csv',
+    mime='text/csv'
+)
