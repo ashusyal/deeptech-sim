@@ -7,6 +7,11 @@ from datetime import datetime
 st.set_page_config(page_title="Deep Tech Financial Simulator", layout="wide")
 st.title("🚀 Deep Tech Startup Financial Simulator")
 
+with st.sidebar.expander("💵 Revenue Model Assumptions"):
+    rev_type = st.radio("What are you selling?", ["Product", "Service (SaaS)", "Both"], help="This determines your revenue model – one-time, subscription, or a mix.")
+    price_per_unit = st.number_input("Product Price per Unit ($)", 0, 100_000, 1000)
+    saas_monthly_price = st.number_input("Monthly SaaS Revenue per Customer ($)", 0, 100_000, 100)
+
 with st.sidebar.expander("🔬 R&D and Operating Costs"):
     scale_mode = st.radio("Cost Scaling Model", ["Lean", "Steady", "Aggressive"], help="Controls how team size and spending scale over time.")
     scale_factors = {"Lean": 1.05, "Steady": 1.2, "Aggressive": 1.4}
@@ -14,13 +19,13 @@ with st.sidebar.expander("🔬 R&D and Operating Costs"):
     eng_fte = st.number_input("FTEs (Engineering)", 0, 500, 5)
     eng_salary = st.number_input("Average Salary per Engineering FTE ($)", 10000, 300000, 90000)
     st.caption("These are engineering roles, contributing primarily to R&D costs.")
-    rd_share = st.number_input("Target R&D % of Burn", 5, 60, 35, help="R&D typically accounts for 35–50% of spend in deep tech. This controls max scaling.")
+    monthly_rnd = st.number_input("Monthly R&D Prototype Costs ($)", 0, 1_000_000, 25000)
     if rd_share > 50:
         st.warning("⚠️ R&D share is above typical deep tech norms. Consider reducing to 35–50% unless justified.")
     fte = st.number_input("FTEs (Non-R&D)", 0, 500, 5)
     salary_per_fte = st.number_input("Average Salary per FTE ($)", 10000, 300000, 80000)
     st.caption("This is the average annual salary for non-engineering FTEs. It contributes to operating costs.")
-    ops_share = st.number_input("Target Non-R&D Ops % of Burn", 5, 60, 35, help="Non-R&D operations (e.g. HR, admin, G&A) often account for 20–40% of spend in growing teams. This caps their scale relative to burn.")
+    monthly_ops = st.number_input("Monthly Non-R&D Operating Costs ($)", 0, 1_000_000, 15000)
     if ops_share > 45:
         st.warning("⚠️ Non-R&D Ops share is above typical. Consider capping at 40–45% to avoid runaway G&A spend.")
     capitalize_rnd = st.checkbox("Capitalize R&D Expenses?", value=True, help="Toggling this ON means R&D costs are treated as assets that provide future benefit, rather than expenses. This affects EBITDA and Net Income.")
@@ -114,9 +119,6 @@ rnd_ops_cost = ops_fte_scaled * salary_per_fte / 12
 monthly_rnd = 25000  # placeholder if monthly_rnd_scaled needed
 monthly_rnd_scaled = monthly_rnd * (scale_rate ** years_arr)
 
-total_burn_target = rd_share + ops_share
-if total_burn_target > 100:
-    st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust to stay within total company burn.")
 
 # R&D is engineering FTE + monthly R&D
 rnd_total = (monthly_rnd_scaled + rnd_fte_cost) * mod
@@ -130,10 +132,10 @@ data['Operating Costs'] = ops_total
 burn_total = rnd_total + ops_total
 
 # Sanity check for implied breakdown
-implied_rd_pct = rnd_total.mean() / burn_total.mean() * 100
-implied_ops_pct = ops_total.mean() / burn_total.mean() * 100
-if implied_rd_pct + implied_ops_pct > 100:
-    st.error("❌ Combined R&D and Ops % exceeds 100% of burn. Please adjust headcounts or salaries.")
+if implied_rd_pct > 40:
+    st.warning(f"⚠️ R&D costs are {implied_rd_pct:.0f}% of burn. Deep tech norms are usually 25–35%, with upper bound ~40%.")
+if implied_ops_pct > 25:
+    st.warning(f"⚠️ Non-R&D Ops costs are {implied_ops_pct:.0f}% of burn. Consider optimizing administrative costs.")
 
 data['Capitalized R&D'] = data['R&D'] if capitalize_rnd else 0
 data['CapEx'] = np.where(np.arange(60) == 0, 100_000, 0)
